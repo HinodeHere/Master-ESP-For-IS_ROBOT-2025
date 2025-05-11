@@ -26,7 +26,7 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 uint8_t data[2];
 
 #define heightOrigin 5900
-#define ground 0
+#define ground -50
 #define upperPlate 2600
 #define plate 1750
 #define AfterPlate 2400
@@ -104,14 +104,15 @@ void comWithSlave(int type, int distanceCM){
 }
 
 void takeFire(){
+  Serial.println("Taking Fire!");
   // clawControl(1); //already done when it is in standbymode and after placing fire on the tables
   clawHeightTo(ground);
   delay(100);
   clawControl(0);
+  clawHeightTo(upperPlate);
 }
 
 void placeFireOnRedTable(){
-  clawHeightTo(upperPlate);
   setServoAngle(clawSpinner,0);
 
   delay(500);
@@ -129,7 +130,6 @@ void placeFireOnRedTable(){
 }
 
 void placeFireOnBlueTable(){
-  clawHeightTo(upperPlate);
   setServoAngle(clawSpinner,270);
 
   delay(500);
@@ -158,6 +158,16 @@ void waitUntilMotorIsDone() {
   }
 }
 
+//@brief data (type, distance);
+//@param type {0 = stop motors,1 = forward, 2 = back, 3 = left, 4 = right}
+//@param speed （not using) should be 120rpm(?) (need to tune PID const!) 
+//@param distance how many cm
+void moveWithWaiting(int type, int cm){
+  comWithSlave(type,cm);
+  waitUntilMotorIsDone();
+  delay(50);
+}
+
 void putOneSetOnWall(){ //move 7 cm between 2 fires
   //go to above the blue fire
   setServoAngle(clawSpinner,270);
@@ -178,7 +188,7 @@ void putOneSetOnWall(){ //move 7 cm between 2 fires
   clawHeightTo(upperWall);
   spinBlueTable();
 
-  moveWithWaiting(FORWARD,7);
+  moveWithWaiting(1,7);
 
   //go to above the red fire
   setServoAngle(clawSpinner,0);
@@ -206,12 +216,6 @@ void putOneSetOnWall(){ //move 7 cm between 2 fires
 enum MoveDir {STOP = 0, FORWARD=1, BACK=2, LEFT=3, RIGHT=4};
 float PickupDist = 4.6f;
 float PutDownDist = 4.6f; //might be changed later
-
-void moveWithWaiting(int type, int cm){
-  comWithSlave(type,cm);
-  waitUntilMotorIsDone();
-  delay(50);
-}
 
 void moveToNextPoint(int rowNum){
   if (rowNum % 2 == 1){
@@ -245,81 +249,126 @@ void setup() {
   setServoAngle(redTable,0);
 }
 
-int rowNum = 1;
-int columnCount = 1;
-void loop() {
-  //put code to calibrate the claw to be on the max
 
-  clawHeightTo(standby);
-  while (getPreciseDistance() > 14){
-    delay(100); //wave your hand to start the run!
-  }
-
-  //move to the first Junciton
-  moveWithWaiting(FORWARD,140);
-  moveWithWaiting(LEFT,60);
-  
-  //check for fire using ultrasound
-  rowNum = 1;
-  columnCount = 1;
-  while (rowNum != 4){
-    float distance = getPreciseDistance();
-    if (distance > 20 || distance == -1){ //if there's no fire
-      columnCount++;
-      moveToNextPoint(rowNum);
-
-
-    } else{
-      unsigned long t0 = millis(); //for timeout of 3s
-      while (distance > PickupDist && millis()-t0 < 3000){ //if there's a fire and it's near!
-        moveWithWaiting(LEFT,1); //go left for 1 cm if the fire is near but not reachable
+void loop(){
+    clawHeightTo(standby);
+    for (int i = 0; i < 2; i++){
+      float distance = getPreciseDistance();
+      while(distance > 4.6 || distance == -1){
+        Serial.println(distance);
+        delay(50);
         distance = getPreciseDistance();
-        delay(100);
       }
 
-      //go to the next junction if we timed out
-      if (millis() - t0 >= 3000){
-        columnCount++;
-        moveToNextPoint(rowNum);
-        continue; //move to the next column
-      }
-      //now that it is in range, take the fire now!
+
       takeFire();
+      Serial.println("done taking, now scanning for colour");
 
-      //Colour sensing
+      // Colour sensing
       String colour = MajorityVoteColourRead();
+      Serial.println(colour);
+
+      comWithSlave(1,70);
+      
       if (colour == "Red"){
         placeFireOnRedTable();
       } else{
         placeFireOnBlueTable();
       }
-      columnCount++;
-      moveToNextPoint(rowNum);
+      waitUntilMotorIsDone();
     }
+    moveWithWaiting(2,140);
 
 
-    if(columnCount == 5){
-      columnCount = 1;
-      rowNum++;
-    }
-  }
+    clawHeightTo(heightOrigin-100);
 
-  float distance = getPreciseDistance();
-  unsigned long t0 = millis(); //for timeout of 3s
-  while(distance > PutDownDist && millis()-t0 < 3000){
-    moveWithWaiting(LEFT,1); //go left for 1 cm if the fire is near but not reachable
-    distance = getPreciseDistance();
-    delay(100);
-  }
-
-  //put the fires on the wall 4 times
-  for (int i = 0; i < 4; i++){
-    putOneSetOnWall();
-    delay(250);
-    moveWithWaiting(FORWARD,62);
-  }
-
-  while(1){}; //the run is done!
+    while(1);
 }
+
+
+
+
+// int rowNum = 1;
+// int columnCount = 1;
+// void loop() {
+  
+//   //put code to calibrate the claw to be on the max
+
+//   clawHeightTo(standby);
+//   while (getPreciseDistance() > 14){
+//     delay(100); //wave your hand to start the run!
+//   }
+
+//   //move to the first Junciton
+//   moveWithWaiting(FORWARD,140);
+//   moveWithWaiting(LEFT,60);
+  
+//   //check for fire using ultrasound
+//   rowNum = 1;
+//   columnCount = 1;
+//   while (rowNum != 4){
+//     float distance = getPreciseDistance();
+//     if (distance > 20 || distance == -1){ //if there's no fire
+//       columnCount++;
+//       moveToNextPoint(rowNum);
+
+
+//     } else{
+//       unsigned long t0 = millis(); //for timeout of 3s
+//       while (distance > PickupDist){ //if there's a fire and it's near!
+//         moveWithWaiting(LEFT,1); //go left for 1 cm if the fire is near but not reachable
+//         distance = getPreciseDistance();
+//         delay(100);
+//       }
+
+//       // //go to the next junction if we timed out
+//       // if (millis() - t0 >= 3000){
+//       //   columnCount++;
+//       //   moveToNextPoint(rowNum);
+//       //   continue; //move to the next column
+//       // }
+
+
+//       //now that it is in range, take the fire now!
+//       takeFire();
+
+//       //Colour sensing
+//       String colour = MajorityVoteColourRead();
+//       if (colour == "Red"){
+//         placeFireOnRedTable();
+//       } else{
+//         placeFireOnBlueTable();
+//       }
+//       columnCount++;
+//       moveToNextPoint(rowNum);
+//     }
+
+
+//     if(columnCount == 5){
+//       columnCount = 1;
+//       moveWithWaiting(LEFT,65);
+//       rowNum++;
+//     }
+//   }
+
+
+//   //for placing fire on wall
+//   float distance = getPreciseDistance();
+//   unsigned long t0 = millis(); //for timeout of 3s
+//   while(distance > PutDownDist && millis()-t0 < 3000){
+//     moveWithWaiting(LEFT,1); //go left for 1 cm if the fire is near but not reachable
+//     distance = getPreciseDistance();
+//     delay(100);
+//   }
+
+//   //put the fires on the wall 4 times
+//   for (int i = 0; i < 4; i++){
+//     putOneSetOnWall();
+//     delay(250);
+//     moveWithWaiting(FORWARD,62);
+//   }
+
+//   while(1){}; //the run is done!
+// }
 
 

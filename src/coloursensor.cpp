@@ -13,14 +13,14 @@ int bluePW = 0;
 
 
 // Get these from callibrating the colour sensor
-int redMin = 152;
-int redMax = 420;
+int redMin = 100;
+int redMax = 910;
 
-int greenMin = 170;
-int greenMax = 520;
+int greenMin = 110;
+int greenMax = 900;
 
-int blueMin = 145;
-int blueMax = 460;
+int blueMin = 90;
+int blueMax = 800;
 
 //variable for final value
 int redValue;
@@ -127,22 +127,22 @@ String readColourOnce() {
     greenValue = map(greenPW, greenMin, greenMax, 255, 0);
     delay(10);
   
-    // 2) Bounds check
-    if (redValue < 0 || greenValue < 0 || blueValue < 0) {
-      Serial.println("Too far!");
-    }
-    else if (redValue > 255 || greenValue > 255 || blueValue > 255) {
-      Serial.println("Too near!");
-    }
-    else {
-      Serial.print("Red: ");   Serial.print(redValue);
-      Serial.print("  Blue: ");Serial.print(blueValue);
-      Serial.print("  Green: ");Serial.println(greenValue);
-    }
+    // 2) Bounds check (debug)
+    // if (redValue < 0 || greenValue < 0 || blueValue < 0) {
+    //   Serial.println("Too far!");
+    // }
+    // else if (redValue > 255 || greenValue > 255 || blueValue > 255) {
+    //   Serial.println("Too near!");
+    // }
+    // else {
+    //   Serial.print("Red: ");   Serial.print(redValue);
+    //   Serial.print("  Blue: ");Serial.print(blueValue);
+    //   Serial.print("  Green: ");Serial.println(greenValue);
+    // }
   
     // 3) Determine “max” colour
     String c = colourName(redValue, blueValue, greenValue);
-    Serial.print("Detected: "); Serial.println(c);
+    // Serial.print("Detected: "); Serial.println(c);
     return c;
 }
   
@@ -163,15 +163,17 @@ String MajorityVoteColourRead(){
   const int numReads = 5;
   int redCount = 0, blueCount = 0;
 
-  while (redCount + blueCount < 5){
+  while (redCount + blueCount < 3){
     String colour = readColourOnce();
     if (colour == "Red") redCount++;
-    else if (colour == "Blue") blueCount++;
+    else blueCount++;
     delay(10);
   }
 
   if (redCount > blueCount){
     return "Red";
   }
-  else return "Blue";
+  else {
+    return "Blue";
+  }
 }
