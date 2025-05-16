@@ -6,7 +6,7 @@ const int trigPin = 41;
 const int echoPin = 42;  
 
 // Precision Parameters
-const int NUM_SAMPLES = 21;   // Odd number for median filter (more samples = smoother)
+const int NUM_SAMPLES = 13;   // Odd number for median filter (more samples = smoother)
 const float TEMPERATURE = 25.0; // Manually set room temp in °C (adjust this!)
 const float MIN_DISTANCE = 2.0;  // 2cm minimum
 const float MAX_DISTANCE = 400.0; // 400cm maximum
@@ -43,7 +43,7 @@ float getPreciseDistance() {
       samples[validSamples] = distance;
       validSamples++;
     }
-    delay(10); // Short delay between samples
+    delay(5); // Short delay between samples
   }
 
   // Error if no valid samples
