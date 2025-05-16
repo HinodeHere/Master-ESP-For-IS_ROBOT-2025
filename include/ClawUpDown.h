@@ -9,6 +9,8 @@ extern volatile int height;
 // Interrupt handler for encoder
 void readEncoder();
 
+void returnBack();
+
 //init everything
 void clawUpDownInit();
 

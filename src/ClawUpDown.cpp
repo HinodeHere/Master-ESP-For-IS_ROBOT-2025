@@ -9,6 +9,31 @@
 //Target is 5900 from start to bottom(floor to get the fire)
 volatile int height = 5900; //height in pulses
 
+
+const int Switch = 18;
+int buttonState = 0;
+void returnBack(){
+  buttonState = digitalRead(Switch);
+  if (buttonState != 1){
+    goUp(175);
+    digitalWrite(LED_BUILTIN,HIGH);
+    Serial.println("Going Up!");
+  }
+
+  while (buttonState != 1){ //keep reading the value of the light
+    delayMicroseconds(50);
+    buttonState = digitalRead(Switch);
+  }
+
+  stop();
+  digitalWrite(LED_BUILTIN,LOW);
+  Serial.println("REACHED!");
+  height = 5900;
+  return;
+}
+
+
+
 void readEncoder() {
   bool a = digitalRead(EN1);
   bool b = digitalRead(EN2);
@@ -22,6 +47,9 @@ void clawUpDownInit() {
     pinMode(EN1, INPUT_PULLUP);
     pinMode(EN2, INPUT_PULLUP);
     attachInterrupt(digitalPinToInterrupt(EN1), readEncoder, RISING);
+
+    pinMode(Switch,INPUT); //for Putting the claw on the top!
+    pinMode(LED_BUILTIN,OUTPUT);
   }
 
 void goDown(int PWM){
@@ -47,13 +75,17 @@ void clawHeightTo(int targetHeight){
     goUp(PWM);
     while (height < targetHeight - tolerance){
       delay(1);
+      Serial.println(height);
     }
   } else if (height > targetHeight){
     goDown(PWM);
     while (height > targetHeight + tolerance){
       delay(1);
+      Serial.println(height);
     }
   }
+  height -= 7;
 
   stop();
 }
+

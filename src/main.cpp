@@ -27,9 +27,9 @@ uint8_t data[2];
 
 #define heightOrigin 5900
 #define ground -50
-#define upperPlate 2650
-#define plate 1750
-#define AfterPlate 2400
+#define upperPlate 2800
+#define plate 1925
+#define AfterPlate 2500
 #define standby 950
 #define wallHeight 4800
 #define upperWall 5100
@@ -38,9 +38,9 @@ uint8_t data[2];
 // 1 = claw spinner
 // 2 = Blue Table (Back Table)
 // 3 = claw
-#define redTable 0
-#define clawSpinner 1
-#define blueTable 14
+#define redTable 4
+#define clawSpinner 0
+#define blueTable 8
 #define claw 3
 
 void setServoAngle(int channel, int angle){
@@ -121,7 +121,7 @@ void placeFireOnRedTable(){
   clawControl(2);
 
   clawHeightTo(AfterPlate);
-  setServoAngle(clawSpinner,135);
+  setServoAngle(clawSpinner,132);
 
   clawHeightTo(standby);
   clawControl(1);
@@ -129,7 +129,7 @@ void placeFireOnRedTable(){
 }
 
 void placeFireOnBlueTable(){
-  setServoAngle(clawSpinner,270);
+  setServoAngle(clawSpinner,268);
 
   delay(500);
 
@@ -138,7 +138,7 @@ void placeFireOnBlueTable(){
   clawControl(2);
 
   clawHeightTo(AfterPlate);
-  setServoAngle(clawSpinner,135);
+  setServoAngle(clawSpinner,132);
 
   clawHeightTo(standby);
   clawControl(1);
@@ -180,7 +180,7 @@ void putOneSetOnWall(){ //move 7 cm between 2 fires
 
   //go up to the wall
   clawHeightTo(wallHeight);
-  setServoAngle(clawSpinner,135);
+  setServoAngle(clawSpinner,132);
   delay(1000);
   
   //release fire
@@ -201,7 +201,7 @@ void putOneSetOnWall(){ //move 7 cm between 2 fires
 
   //go up to the wall
   clawHeightTo(wallHeight);
-  setServoAngle(clawSpinner,135);
+  setServoAngle(clawSpinner,132);
   delay(1000);
 
   waitUntilMotorIsDone(); //just in case if it havent reach the next position!
@@ -244,56 +244,60 @@ void setup() {
   //put them in the desired position
   // comWithSlave(0,0);
   clawControl(1);
-  setServoAngle(clawSpinner,135);
+  setServoAngle(clawSpinner,132);
   setServoAngle(blueTable,0);
   setServoAngle(redTable,0);
+  returnBack();
 }
 
 
 void loop(){
-    // clawHeightTo(standby);
-    // for (int i = 0; i < 3; i++){
-    // comWithSlave(5,10);
-    //   float distance = getPreciseDistance();
-    //   while(distance > 17.5 || distance == -1){
-    //     Serial.println(distance);
-    //     delay(50);
-    //     distance = getPreciseDistance();
-    //   }
-    //   comWithSlave(0,1);
-    //   delay(500);
+    returnBack(); //just in case!
 
-    //   // takeFire();
-    //   Serial.println("done taking, now scanning for colour");
+    comWithSlave(1,140);
+    waitUntilMotorIsDone();
+    clawHeightTo(standby);
+    Serial.println("Stanby done!");
+    for (int i = 0; i < 1; i++){
+      comWithSlave(5,40); //go to left with 40 rpm
+      float distance = getPreciseDistance();
+      while(distance > 7.3 || distance == -1){
+        Serial.println(distance);
+        delay(50);
+        distance = getPreciseDistance();
+      }
+      comWithSlave(0,1);
+      delay(500);
 
-    //   // Colour sensing
-    //   String colour = MajorityVoteColourRead();
-    //   Serial.println(colour);
+      takeFire();
+      Serial.println("done taking, now scanning for colour");
 
-    //   comWithSlave(1,70);
+      // Colour sensing
+      String colour = MajorityVoteColourRead();
+      Serial.println(colour);
       
-    //   if (colour == "Red"){
-    //     placeFireOnRedTable();
-    //   } else{
-    //     placeFireOnBlueTable();
-    //   }
-    //   waitUntilMotorIsDone();
-    // }
+      if (colour == "Red"){
+        placeFireOnRedTable();
+      } else{
+        placeFireOnBlueTable();
+      }
+      //com with slave to move here, dont use movewithwaiting
+      // waitUntilMotorIsDone();
+    }
 
-    // //go back to start
+    // // go back to start
     // // moveWithWaiting(2,140);
+    // comWithSlave(0,1);
 
-
-    // // clawHeightTo(heightOrigin-100);
-
-    delay(3000);
-    comWithSlave(0,1);
+    returnBack();
     while(1);
 }
 
 
 
 
+
+//REAL CODE!!!!
 // int rowNum = 1;
 // int columnCount = 1;
 // void loop() {
@@ -312,7 +316,7 @@ void loop(){
 //   //check for fire using ultrasound
 //   rowNum = 1;
 //   columnCount = 1;
-//   while (rowNum != 4){
+//   while (rowNum <= 3){
 //     float distance = getPreciseDistance();
 //     if (distance > 20 || distance == -1){ //if there's no fire
 //       columnCount++;
