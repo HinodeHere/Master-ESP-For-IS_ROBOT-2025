@@ -44,7 +44,7 @@ int getRedPW(){
   digitalWrite(s2,LOW);
   digitalWrite(s3,LOW);
   //read red only
-
+  delayMicroseconds(100);
   int PW;
   PW = pulseIn(sensorOut,LOW);
 
@@ -55,7 +55,7 @@ int getGreenPW(){
   digitalWrite(s2,HIGH);
   digitalWrite(s3,HIGH);
   //read green only
-
+  delayMicroseconds(100);
   int PW;
   PW = pulseIn(sensorOut,LOW);
 
@@ -66,7 +66,7 @@ int getBluePW(){
   digitalWrite(s2,LOW);
   digitalWrite(s3,HIGH);
   //read blue only
-
+  delayMicroseconds(100); 
   int PW;
   PW = pulseIn(sensorOut,LOW);
 

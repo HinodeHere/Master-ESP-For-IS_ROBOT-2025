@@ -17,8 +17,8 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 #define servoFreq 50
 
 //PWM Pins
-#define SCL 40
-#define SDA 38
+#define SCL 9
+#define SDA 8
 
 //Coms with Slave ESP
 #define SLAVE_ADDR 0x08
@@ -27,7 +27,7 @@ uint8_t data[2];
 
 #define heightOrigin 5900
 #define ground -50
-#define upperPlate 2600
+#define upperPlate 2650
 #define plate 1750
 #define AfterPlate 2400
 #define standby 950
@@ -92,9 +92,8 @@ void spinRedTable(){
 
 
 //@brief data (type, distance);
-//@param type {0 = stop motors,1 = forward, 2 = back, 3 = left, 4 = right}
-//@param speed （not using) should be 120rpm(?) (need to tune PID const!) 
-//@param distance how many cm
+//@param type {0 = stop motors,1 = forward, 2 = back, 3 = left, 4 = right, 5 = control moveRobot left side, 6 for right}
+//@param distance how many cm OR speed by RPM
 void comWithSlave(int type, int distanceCM){
   data[0] = type; data[1] = distanceCM;
   Wire.beginTransmission(SLAVE_ADDR);
@@ -107,7 +106,7 @@ void takeFire(){
   Serial.println("Taking Fire!");
   // clawControl(1); //already done when it is in standbymode and after placing fire on the tables
   clawHeightTo(ground);
-  delay(100);
+  delay(10);
   clawControl(0);
   clawHeightTo(upperPlate);
 }
@@ -147,8 +146,10 @@ void placeFireOnBlueTable(){
 }
 
 void waitUntilMotorIsDone() {
+  const uint32_t timeout = 10000; //10s timeout
+  uint32_t start = millis();
   // Wait for slave to finish moving
-  while (true) {
+  while (millis() - start < timeout) {
     Wire.requestFrom(SLAVE_ADDR, 1);
     if (Wire.available()) {
       uint8_t status = Wire.read();
@@ -159,9 +160,8 @@ void waitUntilMotorIsDone() {
 }
 
 //@brief data (type, distance);
-//@param type {0 = stop motors,1 = forward, 2 = back, 3 = left, 4 = right}
-//@param speed （not using) should be 120rpm(?) (need to tune PID const!) 
-//@param distance how many cm
+//@param type {0 = stop motors,1 = forward, 2 = back, 3 = left, 4 = right, 5 = control moveRobot left side, 6 for right}
+//@param distance how many cm OR speed by RPM
 void moveWithWaiting(int type, int cm){
   comWithSlave(type,cm);
   waitUntilMotorIsDone();
@@ -251,37 +251,43 @@ void setup() {
 
 
 void loop(){
-    clawHeightTo(standby);
-    for (int i = 0; i < 2; i++){
-      float distance = getPreciseDistance();
-      while(distance > 4.6 || distance == -1){
-        Serial.println(distance);
-        delay(50);
-        distance = getPreciseDistance();
-      }
+    // clawHeightTo(standby);
+    // for (int i = 0; i < 3; i++){
+    // comWithSlave(5,10);
+    //   float distance = getPreciseDistance();
+    //   while(distance > 17.5 || distance == -1){
+    //     Serial.println(distance);
+    //     delay(50);
+    //     distance = getPreciseDistance();
+    //   }
+    //   comWithSlave(0,1);
+    //   delay(500);
 
+    //   // takeFire();
+    //   Serial.println("done taking, now scanning for colour");
 
-      takeFire();
-      Serial.println("done taking, now scanning for colour");
+    //   // Colour sensing
+    //   String colour = MajorityVoteColourRead();
+    //   Serial.println(colour);
 
-      // Colour sensing
-      String colour = MajorityVoteColourRead();
-      Serial.println(colour);
-
-      comWithSlave(1,70);
+    //   comWithSlave(1,70);
       
-      if (colour == "Red"){
-        placeFireOnRedTable();
-      } else{
-        placeFireOnBlueTable();
-      }
-      waitUntilMotorIsDone();
-    }
-    moveWithWaiting(2,140);
+    //   if (colour == "Red"){
+    //     placeFireOnRedTable();
+    //   } else{
+    //     placeFireOnBlueTable();
+    //   }
+    //   waitUntilMotorIsDone();
+    // }
+
+    // //go back to start
+    // // moveWithWaiting(2,140);
 
 
-    clawHeightTo(heightOrigin-100);
+    // // clawHeightTo(heightOrigin-100);
 
+    delay(3000);
+    comWithSlave(0,1);
     while(1);
 }
 
