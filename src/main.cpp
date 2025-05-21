@@ -28,7 +28,7 @@ uint8_t data[2];
 #define heightOrigin 5900
 #define ground -50
 #define upperPlate 2800
-#define plate 1925
+#define plate 1975
 #define AfterPlate 2500
 #define standby 950
 #define wallHeight 4800
@@ -253,22 +253,37 @@ void setup() {
 
 void loop(){
     returnBack(); //just in case!
-
+    clawHeightTo(standby);
+    delay(50);
     comWithSlave(1,140);
     waitUntilMotorIsDone();
-    clawHeightTo(standby);
-    Serial.println("Stanby done!");
-    for (int i = 0; i < 1; i++){
-      comWithSlave(5,40); //go to left with 40 rpm
-      float distance = getPreciseDistance();
-      while(distance > 7.3 || distance == -1){
-        Serial.println(distance);
-        delay(50);
-        distance = getPreciseDistance();
-      }
-      comWithSlave(0,1);
-      delay(500);
+    delay(500); //delay between directions!
 
+    comWithSlave(5,40); //go to left with 40 rpm
+    delay(1700);
+    comWithSlave(0,1);
+    
+    Serial.println("Stanby done!");
+
+  for(int row = 1; row < 4; row++){
+    for (int column = 0; column < 5; column++){
+      delay(50);
+      float distance = getPreciseDistance();
+      delay(50);
+      if (distance < 30) //continue if there is something
+      {
+        delay(50);
+        
+          comWithSlave(5,40); //go to left with 40 rpm
+          distance = getPreciseDistance();
+          while(distance > 7.3 || distance == -1){
+            Serial.println(distance);
+            delay(50);
+            distance = getPreciseDistance();
+          }
+          comWithSlave(0,1);
+          delay(500);
+        
       takeFire();
       Serial.println("done taking, now scanning for colour");
 
@@ -278,18 +293,66 @@ void loop(){
       
       if (colour == "Red"){
         placeFireOnRedTable();
+        comWithSlave(4,10);
+        waitUntilMotorIsDone();
+
       } else{
         placeFireOnBlueTable();
+        comWithSlave(4,10);
+        waitUntilMotorIsDone();
       }
-      //com with slave to move here, dont use movewithwaiting
-      // waitUntilMotorIsDone();
+      
     }
+    delay(500);
+    if(row%2 == 1 && column != 4){
+      comWithSlave(2,70);
+    } else if(column != 4) {
+      comWithSlave(1,70);
+    }
+    waitUntilMotorIsDone();
+    comWithSlave(0,1);
+  }
+  comWithSlave(5,40); //go to left with 40 rpm
+  delay(2500);
+  comWithSlave(0,1);
+}
 
-    // // go back to start
-    // // moveWithWaiting(2,140);
-    // comWithSlave(0,1);
+  
+      
+      
 
-    returnBack();
+    // for (int i = 0; i < 1; i++){
+    //   comWithSlave(5,40); //go to left with 40 rpm
+    //   float distance = getPreciseDistance();
+    //   while(distance > 7.3 || distance == -1){
+    //     Serial.println(distance);
+    //     delay(50);
+    //     distance = getPreciseDistance();
+    //   }
+    //   comWithSlave(0,1);
+    //   delay(500);
+
+    //   takeFire();
+    //   Serial.println("done taking, now scanning for colour");
+
+    //   // Colour sensing
+    //   String colour = MajorityVoteColourRead();
+    //   Serial.println(colour);
+      
+    //   if (colour == "Red"){
+    //     placeFireOnRedTable();
+    //   } else{
+    //     placeFireOnBlueTable();
+    //   }
+    //   //com with slave to move here, dont use movewithwaiting
+    //   // waitUntilMotorIsDone();
+    // }
+
+    // // // go back to start
+    // // // moveWithWaiting(2,140);
+    // // comWithSlave(0,1);
+
+    // returnBack();
     while(1);
 }
 
